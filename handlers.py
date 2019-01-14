@@ -4,20 +4,16 @@ from telegram import ChatAction, ParseMode
 
 from storer import Storer
 from utils import (chars_keyboard, default_keyboard, get_inline_keyboard,
-                   get_response, get_schedule, get_user_history,
-                   get_user_stations, get_stations_by_char)
+                   get_response, get_schedule, get_stations_by_char,
+                   get_user_history, get_user_stations)
 
 storer = Storer('bot.db')
-
-users = storer.restore('users')
 
 
 def start(bot, update):
     user_id = update.message.from_user.id
 
-    if user_id not in users:
-        users[user_id] = {'routes': [], 'history': []}
-        storer.store('users', users)
+    storer.init_user(user_id)
 
     msg = 'Местоположение трамваев в Екатеринбурге'
     bot.sendMessage(update.message.chat_id, msg, reply_markup=default_keyboard)
@@ -62,8 +58,7 @@ def station(bot, update):
     bot.sendChatAction(chat_id, ChatAction.TYPING)
 
     # Update user history
-    users[user_id]['history'].insert(0, station_id)
-    storer.store('users', users)
+    storer.update_history(user_id, station_id)
 
     # Get html from ETTU
     html = get_response(station_id)
@@ -90,12 +85,6 @@ def favorite(bot, update):
     station_id = re.sub(r'/fav_', '', update.message.text)
     user_id = update.message.from_user.id
 
-    if station_id in users[user_id]['routes']:
-        users[user_id]['routes'].remove(station_id)
-        msg = 'Остановка удалена из избранного'
-    else:
-        users[user_id]['routes'].append(station_id)
-        storer.store('users', users)
-        msg = 'Остановка добавлена в избранное'
+    msg = storer.favorite(user_id, station_id)
 
     bot.sendMessage(update.message.chat_id, msg, parse_mode=ParseMode.HTML)

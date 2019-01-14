@@ -4,7 +4,10 @@ import requests
 from telegram import (InlineKeyboardButton, InlineKeyboardMarkup,
                       ReplyKeyboardMarkup)
 
-from stations import stations, invert_stations
+from stations import invert_stations, stations
+from storer import Storer
+
+storer = Storer('bot.db')
 
 
 def get_inline_keyboard(station_id):
@@ -47,7 +50,7 @@ def get_schedule(html):
 
 
 def get_user_stations(uid):
-    from handlers import users
+    users = storer.restore('users')
 
     if len(users[uid]['routes']):
         _list = []
@@ -66,7 +69,7 @@ def get_user_stations(uid):
 
 
 def get_user_history(uid):
-    from handlers import users
+    users = storer.restore('users')
 
     if len(users[uid]['history']):
 
